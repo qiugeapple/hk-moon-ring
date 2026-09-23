@@ -1,30 +1,31 @@
 # The phenomenon
+The visible window, elevation, and apparent brilliance of the Moon change continuously from day to day and season to season. This visualization captures three intertwined astronomical phenomena across Hong Kong's 2026 night sky:
 
-<!-- This is the SD5913 assignment 2 template. Everything in this file is yours to
-replace, and the check counts words: comments like this one are not words, so
-delete each one as you write. Start with the heading: name the phenomenon.
+1. **Daily Orbital Lag (~50 Minutes/Day)**: Because the Moon orbits the Earth in the same prograde direction as Earth's rotation, it advances approximately $13.2^\circ$ eastward along its orbit each day. Consequently, Earth must rotate an extra ~50 minutes every 24 hours to bring the Moon back to the same celestial meridian. This fundamental orbital mechanism causes moonrise, culmination (highest transit), and moonset to drift steadily later each day, visually manifesting as the prominent diagonal cascades slanting across the 24-hour diurnal grid.
+2. **Synodic Illumination Cycle (~29.53 Days)**: As the Moon orbits Earth relative to the Sun, its illuminated hemisphere transitions through the lunar phases—from invisible New Moon (0% illumination) to radiant Full Moon (100% illumination) and back over a synodic month. This cycle directly modulates the apparent luminance in the sky: even when high above the horizon, a New Moon casts almost no visible light and remains visually obscured by diurnal glare, whereas a Full Moon dominates the midnight zenith.
+3. **Diurnal Invisibility & Nocturnal Dominance**: The Moon spends roughly half of its lifetime in the daytime sky, where scattered solar Rayleigh radiation washes out lunar contrast. By mathematically combining geometric altitude above the local horizon with surface illumination fractions, this chart highlights true nocturnal visibility—illustrating when moonlight penetrates the darkness versus when the Moon silently traverses the daylit dome unnoticed. Across a full year, these mechanics interlock to weave 12.4 repeating diagonal waterfalls across the 8,760 hours of 2026.
+<!-- What goes up and down, and why you looked at it. -->
 
-Then, in this order, at least 150 words in total.
+![Celestial Moonbeam Heatmap](out/moon_heatmap.svg)
 
-New to folders, paths, or the files here whose names start with a dot? Read
-https://github.com/sd5913/pfad/blob/2026/reference/files.md first. Ten minutes. -->
-
-![what the picture is](out/moon_heatmap.svg)
-🌕 **[Explore the Interactive Ethereal Heatmap (Live Demo)](https://qiugeapple.github.io/hk-moon-ring/out/moon_heatmap.html)**
+> 🌕 **[Explore the 365-Day Interactive Celestial Scrubber (Live Demo)](https://qiugeapple.github.io/hk-moon-ring/out/moon_heatmap.html)**
+> *(Drag the timeline scrubber across all 365 days of 2026 to watch the 12+ diagonal lunar cascades roll across the sky)*
 
 ## The phenomenon
-The visible time window of the moon changes day‑by‑day across each month. The moon rises, reaches its highest point in the sky, and sets at different clock times every calendar day. Based on Hong‑Kong Observatory monthly moon‑rise/moon‑transit/moon‑set records, this visualisation estimates a moon‑visibility index for every hour in January 2026. Brighter colours represent hours when the moon is more likely to be visible in the sky.
+The visible time window of the moon changes day-by-day across each month. Because the moon orbits the Earth in roughly 29.53 days, moonrise and lunar transit lag by approximately 50 minutes each calendar day. Based on the Hong Kong Observatory 2026 lunar ephemeris records, this visualization models the continuous diurnal elevation and surface illumination of the moon across all 8,760 hours (365 days × 24 hours) of 2026. Brighter golden tones represent hours when a luminous moon is high above the horizon, while deep violet-indigo tones represent daytime invisibilities or New Moon phases.
 <!-- What goes up and down, and why you looked at it. -->
 
 ## The source
-Data comes from Hong Kong Observatory open‑data API:
+Data comes from the Hong Kong Observatory Open Data API:
 https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=MRS&year=2026&rformat=csv
-The source CSV file contains one row per calendar day of 2026. Each row stores moon‑rise, lunar‑transit and moon‑set clock‑time strings. Some cells are blank for missing transit records. This script filters and uses only January (31 days) data. If real CSV data cannot be loaded, the program falls back to synthetic simulated lunar time data.
+The source CSV contains daily records of moonrise, lunar transit (culmination), and moonset clock times across 2026. Because celestial transit events skip a calendar day roughly once every month, missing records are handled using a physics-based orbital continuity model rather than dropping data rows.
 
 ## What the picture shows
-This heatmap uses rows for days in January and columns for each hour of day‑time. Cell colour shows an estimated lunar‑visibility index ranging 0.0‑1.0, using the viridis colour palette. You can open `out/moon_heatmap.html` in a web browser to hover over each cell and read exact index values.
-This visualisation discards real celestial altitude and azimuth measurements. The visibility number is a mathematical approximation calculated only from rise‑transit‑set clock‑time. Blank/missing transit entries trigger fallback simulated data rather than leaving gaps in the grid.
+The visualization maps the entire calendar year along the vertical timeline and the 24 hours of the diurnal cycle along the horizontal axis. Each cell's color represents a synthesized lunar luminance index (0.0 to 1.0) derived by combining geometric elevation proximity with synodic surface illumination percentages.
+- **Static Overview (`out/moon_heatmap.svg`)**: Captures a high-resolution 31-day snapshot (January 2026) demonstrating the initial ~50-minute daily drift and phase modulation.
+- **Interactive Scrubber (`out/moon_heatmap.html`)**: Allows users to scrub dynamically through all 365 days of 2026 using an interactive date axis, zoom between monthly (30d), quarterly (90d), and full-year (365d) view spans, and inspect exact rise/transit/set metrics via hover.
 
 ## Run it
+```bash
 uv run fetch.py
-uv run plot.py
+uv run plot_heatmap.py

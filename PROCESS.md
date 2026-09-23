@@ -1,22 +1,19 @@
 # Process
+Stage 1: API Ingestion & Initial Scatter PlotI started by writing fetch.py to retrieve the complete 2026 lunar ephemeris from the Hong Kong Observatory open data API (dataType=MRS&year=2026&rformat=csv), caching it locally at data/moon-2026.csv. My first visual prototype (plot.py) attempted to map discrete daily timestamps (rise, transit, set) as scatter dots over a vertical timeline. However, this initial chart felt visually fragmented, aesthetically cold, and suffered from coordinate alignment bugs. Discrete points failed to communicate the gradual, continuous ascent and descent of moonlight in the night sky.
 
-<!-- Same as assignment 1, same honesty. Which tools you used and for what; one
-thing you kept and why it was good; one thing you rejected and why it was wrong.
-"I did not use any" is fine if it is true.
+Stage 2: Single-Month Diurnal Heatmap (January 2026)Seeking a more cohesive visual language, I shifted from discrete points to a continuous 2D matrix ($31 \text{ days} \times 24 \text{ hours}$) for January 2026 (plot_heatmap.py). By modeling hourly lunar elevation as a cosine curve centered around culmination time, the moon's daily ~50-minute orbital lag naturally emerged as an elegant diagonal beam. I replaced rigid engineering colormaps (Viridis) with an ethereal celestial gradient—deep night abyss (#070b1a), midnight indigo (#1e1b4b), twilight purple (#581c87), and moonbeam gold (#fef08a)—along with Y-axis lunar phase glyphs (🌕, 🌓, 🌑).
 
-If a model wrote most of plot.py, which is likely and allowed, the interesting part
-is what you had to correct: did it invent a column name, use pandas where a list
-would do, silently drop the rows it could not parse? -->
+Stage 3: Full-Year Expansion & Interactive Time ScrubberWhile the January heatmap was visually satisfying, limiting the scope to a single month discarded over 90% of the dataset and concealed the grander astronomical tapestry. To fully represent the 2026 ephemeris, I expanded the mathematical pipeline to parse all 365 days (8,760 hourly data points) and calculate exact synodic phase illuminations across all 12 lunar cycles. Because a 365-row static SVG would compress individual hours into illegible slivers, I built an interactive time scrubber in out/moon_heatmap.html. Users can drag a responsive celestial date slider across the year, toggle between monthly (30d), seasonal (90d), and full-year (365d) viewports, and hover to inspect real-time astronomical stats in a HUD badge.
 
 
 ## Tools
-I used Gemini and Doubao (AI assistants) for this assignment.
-I used Gemini to help understand and organise Hong‑Kong Observatory moon‑rise CSV dataset fields.
-I used Doubao to draft the heat‑map plotting logic, viridis colour‑mapping function, SVG grid layout and interactive HTML hover logic.
-I modified the code with gemini : limited data scope to January only, added fallback simulated‑data logic for missing CSV records, fixed parsing for empty CSV cells, and adjusted axis labels, ticks and colour‑bar layout. All core design decisions for this heat‑map visualisation were my own.
+I used Gemini and Doubao as AI collaborators throughout this iterative journey.
+I used Doubao for initial exploratory drafts of SVG grid layouts and early Viridis mapping snippets.I used Gemini for the core mathematical heavy-lifting: constructing the multi-month $365 \times 24$ continuous matrix, computing synodic lunar illumination equations ($\sim 29.53$ days), designing the multi-stop twilight-to-moonlight color palette, refactoring the interactive HTML canvas renderer, and debugging data-parsing edge cases (such as handling missing transit timestamps).I actively steered and refined the AI outputs at every step: demanding strict English interface terminology, transitioning the project from a static single-month view into an interactive full-year scrubber, calibrating font scales and padding for mobile responsiveness, and crafting the HUD layout.
 
 ## Kept
-I kept the matrix‑grid computation logic which calculates moon‑visibility index from rise‑transit‑set timestamps. This block of code was valuable because it turns discrete daily time records into continuous hourly values suitable for heat‑map rendering, which would take much longer for me to write from scratch.
+I kept the synodic illumination weighting formula combined with the dynamic date scrubber viewport. Raw ephemeris records only tell us when the moon crosses boundaries, not how bright it appears. Multiplying the geometric elevation index by surface illumination percentages naturally dims New Moons while emphasizing Full Moons. Pairing this with a flexible viewport slider allows users to appreciate both the fine hourly details of individual days and the macro-scale pattern of all 12+ diagonal waterfall waves cascading across 2026.
 
 ## Rejected
-I rejected the initial AI suggestion to draw individual circle markers for rise / transit / set events over top of the heatmap grid, primarily for aesthetic and clarity reasons. Adding overlay circles cluttered the ethereal nocturnal gradient and disrupted the smooth reading of the color grid. From a visual design perspective, the circular markers felt like noisy data artifacts over an otherwise fluid celestial band. Scientifically, since our numbers represent an estimated visibility index rather than true celestial spherical altitude, discrete point markers also gave a misleading impression of pinpoint astronomical precision. I discarded those markers and kept the clean, atmospheric heatmap instead.
+Overlay Scatter Markers: I rejected the early AI proposal to overlay circular dots for rise, transit, and set times atop the heatmap cells. The markers cluttered the visual flow, felt like noisy artifacts over the smooth celestial gradient, and gave a misleading impression of pinpoint astrometric tracking for what is fundamentally an estimated visibility model.
+
+Static Full-Year SVG Layout: When scaling from January to all 365 days, AI initially suggested squeezing all 365 rows into a single fixed SVG graphic. This was rejected because 365 vertical rows squeezed cell heights below 1.2 pixels, completely ruining legibility. Instead, I opted for an interactive sliding viewport that lets viewers smoothly scroll through the year without sacrificing resolution.
