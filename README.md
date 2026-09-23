@@ -9,7 +9,8 @@ Then, in this order, at least 150 words in total.
 New to folders, paths, or the files here whose names start with a dot? Read
 https://github.com/sd5913/pfad/blob/2026/reference/files.md first. Ten minutes. -->
 
-![what the picture is](out/moon.svg)
+![what the picture is]![what the picture is](out/moon.svg)
+> 🌕 **[Explore the Interactive Celestial Chart (Live Demo)](https://qiugeapple.github.io/hk-moon-ring/out/moon_celestial.html)**
 
 ## The phenomenon
 The time at which the moon rises, reaches its highest point in the sky, and sets drifts later by roughly 50 minutes each day as a consequence of the moon's eastward orbit around Earth. Across 2026, this continuous lag creates rhythmic diagonal waves across the 24-hour cycle. In addition, the moon undergoes an ~29.53-day synodic cycle from New Moon to Full Moon. Because the lunar cycle does not synchronize evenly with Earth's 24-hour solar day, there are occasional calendar days without a recorded moonrise, transit, or moonset, leaving natural gaps in the ephemeris schedule.
