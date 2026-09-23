@@ -8,21 +8,15 @@ If a model wrote most of plot.py, which is likely and allowed, the interesting p
 is what you had to correct: did it invent a column name, use pandas where a list
 would do, silently drop the rows it could not parse? -->
 
-## Process
-I began by fetching the 2026 lunar ephemeris dataset from the Hong Kong Observatory open-data API using `fetch.py` to observe the cyclical rhythms of moonrise, culmination, and moonset across the year. 
-
-After using Gemini to decipher the columns and Doubao to generate a preliminary plotting script, I encountered several practical challenges: the script had a critical coordinate bug on transit points, lacked handling for blank cells when transits did not occur on a given day, and rendered points floating in an empty space without any time or calendar references. 
-
-To resolve these issues, I inspected and cleaned the data, corrected the coordinate calculations, and built a structured astronomical layout around the points—adding a 24-hour diurnal vertical scale and a 12-month calendar timeline against a dark celestial sky. I also layered the 29.53-day synodic lunar cycle into the visualization, introducing subtle vertical light columns for Full Moons and markers for New Moons. Finally, to keep the chart interactive while preserving the scatter-only design and ensuring direct rendering on GitHub without external dependencies, I embedded native SVG `<title>` tooltips into each data point so viewers can hover over any moment to inspect exact dates, moon phases, and times.
 
 ## Tools
-I used Gemini and Doubao (AI assistants) during this assignment.
-I used Gemini to help me organise and understand the raw Hong‑Kong Observatory moon‑rise dataset, sorting out the meaning of each CSV column.
-I used Doubao to draft the initial Python plotting code for `plot.py`, including logic for reading the CSV file and generating SVG output.
-Throughout the work, I manually inspected the data, fixed bugs in the generated script, and adjusted the output path so that the final SVG file saves into the `out` folder. I also handled empty cells in the dataset, which would otherwise crash the program. The overall design decisions for this visualisation were my own.
+I used Gemini and Doubao (AI assistants) for this assignment.
+I used Gemini to help understand and organise Hong‑Kong Observatory moon‑rise CSV dataset fields.
+I used Doubao to draft the heat‑map plotting logic, viridis colour‑mapping function, SVG grid layout and interactive HTML hover logic.
+I modified the code myself: limited data scope to January only, added fallback simulated‑data logic for missing CSV records, fixed parsing for empty CSV cells, and adjusted axis labels, ticks and colour‑bar layout. All core design decisions for this heat‑map visualisation were my own.
 
 ## Kept
-I kept the core loop structure for iterating over CSV rows and converting time values into vertical SVG coordinates. This section of code was helpful because it provided a solid foundation to map clock times onto the 24‑hour vertical axis, and saved me from writing all of the parsing logic from scratch.
+I kept the matrix‑grid computation logic which calculates moon‑visibility index from rise‑transit‑set timestamps. This block of code was valuable because it turns discrete daily time records into continuous hourly values suitable for heat‑map rendering, which would take much longer for me to write from scratch.
 
 ## Rejected
-I rejected the AI’s suggestion to add slanted connecting lines between successive moon‑transit points. This idea would imply a continuous curved path of the moon across the sky. However, our dataset only contains discrete daily clock‑time records without angular position data. Drawing those lines would misrepresent the available source data and create unsupported visual information. Therefore I kept the scatter‑only circle rendering.
+I rejected the initial AI suggestion to draw individual circle markers for rise / transit / set events over top of the heatmap grid. Adding overlay circles would clutter the colour‑grid reading experience. Since we only have approximate visibility index instead of real celestial altitude, discrete marker points would give a false impression of precise astronomical position. I kept the clean heat‑map‑only output instead.
