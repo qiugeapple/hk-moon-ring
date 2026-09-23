@@ -1,4 +1,5 @@
 import csv
+import json
 import math
 import os
 
@@ -30,7 +31,6 @@ if os.path.exists(csv_path):
                 {"date": date, "rise": rise, "trans": trans, "set": m_set}
             )
 
-# Fallback simulation if CSV is missing
 if not rows_data:
     import datetime
 
@@ -55,7 +55,7 @@ if not rows_data:
 
 total_days = len(rows_data)
 
-# 2. Compute lunar synodic cycle and illumination
+# 2. Compute lunar synodic cycle
 SYNODIC_MONTH = 29.530588
 NEW_MOON_REF = 18.16
 
@@ -66,8 +66,10 @@ for i, row in enumerate(rows_data):
 
     row["moon_age"] = round(moon_age, 1)
     row["illum"] = round(illum, 1)
-    row["is_new"] = abs(moon_age) < 0.6 or abs(moon_age - SYNODIC_MONTH) < 0.6
-    row["is_full"] = abs(moon_age - SYNODIC_MONTH / 2) < 0.6
+    row["is_new"] = bool(
+        abs(moon_age) < 0.6 or abs(moon_age - SYNODIC_MONTH) < 0.6
+    )
+    row["is_full"] = bool(abs(moon_age - SYNODIC_MONTH / 2) < 0.6)
 
 
 def time_to_frac(timestr):
@@ -81,7 +83,7 @@ def time_to_frac(timestr):
 
 
 # ==========================================
-# 3. Output 1: Static SVG for GitHub README
+# 3. Output 1: Static SVG (out/moon.svg)
 # ==========================================
 svg = [
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}" viewBox="0 0 {WIDTH} {HEIGHT}" style="background-color: #050b18; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">'
@@ -107,7 +109,8 @@ svg.append(
     f'<g transform="translate({legend_x}, 38)" font-size="11" fill="#94a3b8">'
 )
 svg.append(
-    '<circle cx="0" cy="-4" r="3.5" fill="#34d399"/><text x="8" y="0">Moonrise</text>'
+    '<circle cx="0" cy="-4" r="3.5" fill="#34d399"/><text x="8"'
+    ' y="0">Moonrise</text>'
 )
 svg.append(
     '<circle cx="78" cy="-4" r="3.5" fill="#fde047"/><text x="86"'
@@ -125,7 +128,6 @@ svg.append('</g>')
 
 svg.append(f'<g transform="translate({PAD_L},{PAD_T})">')
 
-# Full moon beams and new moon markers
 for i, r in enumerate(rows_data):
     cx = (i / total_days) * PLOT_W
     if r["is_full"]:
@@ -147,7 +149,6 @@ for i, r in enumerate(rows_data):
             ' text-anchor="middle">🌑</text>'
         )
 
-# 24-hour diurnal grid lines
 for h in range(0, 25, 4):
     y = (h / 24.0) * PLOT_H
     svg.append(
@@ -159,7 +160,6 @@ for h in range(0, 25, 4):
         f' text-anchor="end">{h:02d}:00</text>'
     )
 
-# 12-month calendar dividing lines
 month_names = [
     "Jan",
     "Feb",
@@ -188,7 +188,6 @@ for m, days in enumerate(month_days):
     )
     acc += days
 
-# Render scatter points with native SVG hover tooltips
 for i, r in enumerate(rows_data):
     x = (i / total_days) * PLOT_W
     date_display = r["date"] or f"Day {i+1}"
@@ -224,30 +223,139 @@ with open("out/moon.svg", "w", encoding="utf-8") as out:
 
 
 # ==========================================
-# 4. Output 2: Interactive HTML for GitHub Pages
+# 4. Output 2: Interactive & Animated HTML
 # ==========================================
+data_json = json.dumps(rows_data)
+
+# 嵌入动态指示器与交互层
+inner_svg = "\n".join(svg)
+dynamic_elements = f"""
+      <line id="crossX" x1="0" y1="-30" x2="0" y2="{PLOT_H}" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.9" style="display:none;"/>
+      <circle id="dotRise" r="4.5" fill="#34d399" stroke="#ffffff" stroke-width="1.5" style="display:none;"/>
+      <circle id="dotTrans" r="4.5" fill="#fde047" stroke="#ffffff" stroke-width="1.5" style="display:none;"/>
+      <circle id="dotSet" r="4.5" fill="#f43f5e" stroke="#ffffff" stroke-width="1.5" style="display:none;"/>
+    </g>
+    <rect id="hitbox" x="{PAD_L}" y="0" width="{PLOT_W}" height="{HEIGHT}" fill="transparent" style="cursor: crosshair;"/>
+</svg>
+"""
+final_svg_for_html = inner_svg.replace("</g></svg>", dynamic_elements)
+
 html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>2026 Lunar Phases & Celestial Ephemeris</title>
 <style>
-  body {{ margin: 0; padding: 25px 15px; background: #030712; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; }}
-  .card {{ position: relative; background: #0b1120; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; }}
-  #tooltip {{ position: absolute; pointer-events: none; background: rgba(15,23,42,0.95); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.6; display: none; transform: translate(14px,-50%); box-shadow: 0 12px 24px rgba(0,0,0,0.6); }}
+  :root {{
+    --bg: #030712;
+    --rise: #34d399;
+    --trans: #fde047;
+    --set: #f43f5e;
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{
+    margin: 0;
+    padding: 30px 15px;
+    background: radial-gradient(circle at 50% 10%, #172554 0%, #030712 70%);
+    color: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }}
+  .card {{
+    position: relative;
+    background: rgba(11, 17, 32, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.85);
+  }}
+  .status-bar {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #94a3b8;
+  }}
+  .pulse-dot {{
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #38bdf8;
+    margin-right: 6px;
+    box-shadow: 0 0 10px #38bdf8;
+    animation: pulse 2s infinite;
+  }}
+  @keyframes pulse {{
+    0% {{ opacity: 0.4; transform: scale(0.9); }}
+    50% {{ opacity: 1; transform: scale(1.3); }}
+    100% {{ opacity: 0.4; transform: scale(0.9); }}
+  }}
+  /* 让满月光柱自动产生呼吸流动动画 */
+  #fullMoonBeam stop {{
+    animation: beamGlow 4s ease-in-out infinite alternate;
+  }}
+  @keyframes beamGlow {{
+    0% {{ stop-opacity: 0.25; }}
+    100% {{ stop-opacity: 0.55; }}
+  }}
+  #tooltip {{
+    position: absolute;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.7;
+    display: none;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.8);
+    z-index: 1000;
+    min-width: 190px;
+    backdrop-filter: blur(8px);
+  }}
 </style>
 </head>
 <body>
+
 <div class="card">
-  {''.join(svg).replace('</svg>', f'<line id="crossX" x1="0" y1="-20" x2="0" y2="{PLOT_H}" stroke="rgba(255,255,255,0.4)" stroke-dasharray="3 3" style="display:none;"/></g><rect id="overlay" x="{PAD_L}" y="{PAD_T}" width="{PLOT_W}" height="{PLOT_H}" fill="transparent" style="cursor:crosshair;"/></svg>')}
-  <div id="tooltip"></div>
+  <div class="status-bar">
+    <div><span class="pulse-dot"></span><span>Interactive HUD: Move cursor over the chart to inspect ephemeris</span></div>
+    <div id="live-date">Hovering: None</div>
+  </div>
+
+  <div id="chart-container" style="position: relative;">
+    {final_svg_for_html}
+    <div id="tooltip"></div>
+  </div>
 </div>
+
 <script>
-  const data = {rows_data};
-  const overlay = document.getElementById("overlay");
-  const crossX = document.getElementById("crossX");
-  const tooltip = document.getElementById("tooltip");
+  const data = {data_json};
   const PLOT_W = {PLOT_W};
+  const PLOT_H = {PLOT_H};
+  const PAD_L = {PAD_L};
+  const PAD_T = {PAD_T};
+
+  const container = document.getElementById("chart-container");
+  const hitbox = document.getElementById("hitbox");
+  const crossX = document.getElementById("crossX");
+  const dotRise = document.getElementById("dotRise");
+  const dotTrans = document.getElementById("dotTrans");
+  const dotSet = document.getElementById("dotSet");
+  const tooltip = document.getElementById("tooltip");
+  const liveDate = document.getElementById("live-date");
+
+  function timeToFrac(t) {{
+    if (!t || !t.includes(":")) return null;
+    const parts = t.split(":");
+    return (parseInt(parts[0], 10) + parseInt(parts[1], 10) / 60.0) / 24.0;
+  }}
 
   function getMoonPhaseName(illum, age) {{
     if (age < 1.5 || age > 28) return "🌑 New Moon";
@@ -260,10 +368,11 @@ html_content = f"""<!DOCTYPE html>
     return "🌘 Waning Crescent";
   }}
 
-  overlay.addEventListener("mousemove", (e) => {{
-    const rect = overlay.getBoundingClientRect();
+  hitbox.addEventListener("mousemove", (e) => {{
+    const rect = hitbox.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     if (mouseX < 0 || mouseX > PLOT_W) return;
+
     const idx = Math.min(data.length - 1, Math.max(0, Math.round((mouseX / PLOT_W) * (data.length - 1))));
     const d = data[idx];
     if (!d) return;
@@ -273,28 +382,64 @@ html_content = f"""<!DOCTYPE html>
     crossX.setAttribute("x2", snapX);
     crossX.style.display = "block";
 
+    const fr = timeToFrac(d.rise);
+    const ft = timeToFrac(d.trans);
+    const fs = timeToFrac(d.set);
+
+    function updateDot(dot, frac) {{
+      if (frac !== null) {{
+        dot.setAttribute("cx", snapX);
+        dot.setAttribute("cy", frac * PLOT_H);
+        dot.style.display = "block";
+      }} else {{
+        dot.style.display = "none";
+      }}
+    }}
+    updateDot(dotRise, fr);
+    updateDot(dotTrans, ft);
+    updateDot(dotSet, fs);
+
+    liveDate.textContent = `Inspecting: ${{d.date}}`;
+
+    const cRect = container.getBoundingClientRect();
     tooltip.style.display = "block";
-    tooltip.style.left = (e.clientX - overlay.parentElement.getBoundingClientRect().left) + "px";
-    tooltip.style.top = (e.clientY - overlay.parentElement.getBoundingClientRect().top) + "px";
+    
+    // 防边界溢出
+    let leftPos = e.clientX - cRect.left + 16;
+    if (leftPos + 200 > PLOT_W + PAD_L) {{
+      leftPos = e.clientX - cRect.left - 210;
+    }}
+    tooltip.style.left = leftPos + "px";
+    tooltip.style.top = (e.clientY - cRect.top) + "px";
+
     tooltip.innerHTML = `
-      <div style="color:#38bdf8;font-weight:bold;margin-bottom:4px;">${{d.date}}</div>
-      <div style="color:#cbd5e1;margin-bottom:4px;">${{getMoonPhaseName(d.illum, d.moon_age)}} (${{d.illum}}%)</div>
-      <div><span style="color:#34d399">● Moonrise:</span> ${{d.rise || 'None'}}</div>
-      <div><span style="color:#fde047">● Transit:</span> ${{d.trans || 'None'}}</div>
-      <div><span style="color:#f43f5e">● Moonset:</span> ${{d.set || 'None'}}</div>
+      <div style="color:#38bdf8; font-weight:700; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; margin-bottom:6px;">${{d.date}}</div>
+      <div style="color:#e2e8f0; margin-bottom:4px;">${{getMoonPhaseName(d.illum, d.moon_age)}}</div>
+      <div style="color:#94a3b8; font-size:11px; margin-bottom:6px;">Illumination: <b style="color:#fde047;">${{d.illum}}%</b></div>
+      <div><span style="color:var(--rise);">● Moonrise:</span> <b>${{d.rise || 'None'}}</b></div>
+      <div><span style="color:var(--trans);">● Transit:</span> <b>${{d.trans || 'None'}}</b></div>
+      <div><span style="color:var(--set);">● Moonset:</span> <b>${{d.set || 'None'}}</b></div>
     `;
   }});
 
-  overlay.addEventListener("mouseleave", () => {{
+  hitbox.addEventListener("mouseleave", () => {{
     crossX.style.display = "none";
+    dotRise.style.display = "none";
+    dotTrans.style.display = "none";
+    dotSet.style.display = "none";
     tooltip.style.display = "none";
+    liveDate.textContent = "Hovering: None";
   }});
 </script>
 </body>
 </html>
 """
 
+# 同时在根目录写一个 index.html，让主链接直接生效
 with open("out/moon_celestial.html", "w", encoding="utf-8") as out:
     out.write(html_content)
 
-print("Generated out/moon.svg and out/moon_celestial.html successfully.")
+with open("index.html", "w", encoding="utf-8") as out:
+    out.write(html_content)
+
+print("Fix completed! Successfully generated out/moon.svg, out/moon_celestial.html, and index.html")
