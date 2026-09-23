@@ -10,7 +10,7 @@ New to folders, paths, or the files here whose names start with a dot? Read
 https://github.com/sd5913/pfad/blob/2026/reference/files.md first. Ten minutes. -->
 
 ![what the picture is](out/moon_heatmap.svg)
-
+🌕 **[Explore the Interactive Ethereal Heatmap (Live Demo)](https://qiugeapple.github.io/hk-moon-ring/out/moon_heatmap.html)**
 
 ## The phenomenon
 The visible time window of the moon changes day‑by‑day across each month. The moon rises, reaches its highest point in the sky, and sets at different clock times every calendar day. Based on Hong‑Kong Observatory monthly moon‑rise/moon‑transit/moon‑set records, this visualisation estimates a moon‑visibility index for every hour in January 2026. Brighter colours represent hours when the moon is more likely to be visible in the sky.
